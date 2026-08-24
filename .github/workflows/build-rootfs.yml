@@ -8,8 +8,6 @@ on:
     branches:
       - main
       - master
-    tags:
-      - 'latest'
   workflow_dispatch:
 
 jobs:
@@ -159,51 +157,16 @@ jobs:
           ## 更新内容
           ${{ steps.changes.outputs.commits }}
 
-          ## 下载
-          - `openEuler-24.03-LTS-SP3-RVA20-rootfs.img.zst` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20) zstd 压缩镜像
-          - `openEuler-24.03-LTS-SP3-RVA20-rootfs.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20) tar.gz 压缩包
-          - `openEuler-24.03-LTS-SP3-RVA20-rootfs-all.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20) 完整包
-          - `openEuler-24.03-LTS-SP3-RVA20-selinux-rootfs.img.zst` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20, SELinux) zstd 压缩镜像
-          - `openEuler-24.03-LTS-SP3-RVA20-selinux-rootfs.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20, SELinux) tar.gz 压缩包
-          - `openEuler-24.03-LTS-SP3-RVA20-selinux-rootfs-all.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20, SELinux) 完整包
-          - `openEuler-24.03-LTS-SP3-RVA23-rootfs.img.zst` - openEuler 24.03 LTS SP3 RISC-V64 (RVA23) zstd 压缩镜像
-          - `openEuler-24.03-LTS-SP3-RVA23-rootfs.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA23) tar.gz 压缩包
-          - `openEuler-24.03-LTS-SP3-RVA23-rootfs-all.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA23) 完整包
-          - `openEuler-24.03-LTS-SP3-RVA23-selinux-rootfs.img.zst` - openEuler 24.03 LTS SP3 RISC-V64 (RVA23, SELinux) zstd 压缩镜像
-          - `openEuler-24.03-LTS-SP3-RVA23-selinux-rootfs.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA23, SELinux) tar.gz 压缩包
-          - `openEuler-24.03-LTS-SP3-RVA23-selinux-rootfs-all.tar.gz` - openEuler 24.03 LTS SP3 RISC-V64 (RVA23, SELinux) 完整包
-          - `openEuler-24.03-LTS-SP2-rootfs.img.zst` - openEuler 24.03 LTS SP2 RISC-V64 (RVA20) zstd 压缩镜像
-          - `openEuler-24.03-LTS-SP2-rootfs.tar.gz` - openEuler 24.03 LTS SP2 RISC-V64 (RVA20) tar.gz 压缩包
-          - `openEuler-24.03-LTS-SP2-rootfs-all.tar.gz` - openEuler 24.03 LTS SP2 RISC-V64 (RVA20) 完整包
-          - `openEuler-24.03-LTS-SP2-selinux-rootfs.img.zst` - openEuler 24.03 LTS SP2 RISC-V64 (RVA20, SELinux) zstd 压缩镜像
-          - `openEuler-24.03-LTS-SP2-selinux-rootfs.tar.gz` - openEuler 24.03 LTS SP2 RISC-V64 (RVA20, SELinux) tar.gz 压缩包
-          - `openEuler-24.03-LTS-SP2-selinux-rootfs-all.tar.gz` - openEuler 24.03 LTS SP2 RISC-V64 (RVA20, SELinux) 完整包
-          - `openruyi-rva23-rootfs.img.zst` - openRuyi RISC-V64 (RVA23) zstd 压缩镜像
-          - `openruyi-rva23-rootfs.tar.gz` - openRuyi RISC-V64 (RVA23) tar.gz 压缩包
-          - `openruyi-rva23-rootfs-all.tar.gz` - openRuyi RISC-V64 (RVA23) 完整包
-          - `openruyi-rva20-rootfs.img.zst` - openRuyi RISC-V64 (RVA20) zstd 压缩镜像
-          - `openruyi-rva20-rootfs.tar.gz` - openRuyi RISC-V64 (RVA20) tar.gz 压缩包
-          - `openruyi-rva20-rootfs-all.tar.gz` - openRuyi RISC-V64 (RVA20) 完整包
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ## 发布为 latest
 
-    - name: Update Latest Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: latest
-        files: |
-          artifacts/**/**/*.zst
-          artifacts/**/**/*.tar.gz
-        overwrite: true
-        prerelease: true
-        body: |
-          最新自动构建的 RISC-V64 rootfs 镜像
+          本 release **不会**自动更新 `latest` tag。如需将本次构建作为 `latest` 发布，
+          请在 Actions 页面运行 [Refresh Latest Release](../../actions/workflows/refresh-latest.yml) workflow。
 
-          此 release 会自动更新为最新版本。
-          历史版本请查看其他带时间戳的 release。
+          - 默认会把最近一个时间戳 release（即本次）发布为 latest
+          - 也可在 `Run workflow` 时填入 `source_tag` 指定其他版本
 
-          ## 更新内容
-          ${{ steps.changes.outputs.commits }}
+          稳定下载入口（需先手动发布）：
+          https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest
 
           ## 下载
           - `openEuler-24.03-LTS-SP3-RVA20-rootfs.img.zst` - openEuler 24.03 LTS SP3 RISC-V64 (RVA20) zstd 压缩镜像

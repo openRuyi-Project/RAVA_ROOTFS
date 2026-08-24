@@ -72,6 +72,92 @@ sudo bash build-rootfs.sh openruyi
 
 ## 构建产物
 
+### Latest 下载
+
+稳定下载入口（指向**人工发布**的最新构建，**不会**自动更新）：
+
+- Release 列表：<https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest>
+- `/releases/latest` 会重定向到 `latest` tag：<https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/latest>
+
+⚠️ **注意**：主 workflow 只发布带时间戳的 release，**不会**自动写入 `latest` tag。
+要在某次构建后把 `latest` 指过去，需要手动运行 [Refresh Latest Release](../../actions/workflows/refresh-latest.yml) workflow。
+
+直接下载指定文件：
+
+```
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA20-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA20-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA20-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA20-selinux-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA20-selinux-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA20-selinux-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA23-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA23-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA23-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA23-selinux-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA23-selinux-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP3-RVA23-selinux-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP2-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP2-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP2-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP2-selinux-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP2-selinux-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openEuler-24.03-LTS-SP2-selinux-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openruyi-rva23-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openruyi-rva23-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openruyi-rva23-rootfs-all.tar.gz
+
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openruyi-rva20-rootfs.img.zst
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openruyi-rva20-rootfs.tar.gz
+https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest/download/openruyi-rva20-rootfs-all.tar.gz
+```
+
+### 发布 latest
+
+`latest` tag 由人工控制：每次主构建完成后**不会**自动更新。需要从以下三种方式中选一个：
+
+#### 方式 1：推送 `latest` tag（推荐，最轻量）
+
+```bash
+# 把当前 HEAD 标记为 latest 并推送
+git tag -f latest
+git push origin latest --force
+```
+
+推送 `latest` tag 不会重新构建 rootfs，只把最近一个 `vYYYYMMDD_HHMMSS` 时间戳 release 发布为 `latest`。
+
+#### 方式 2：手动 Run workflow
+
+1. 进入 Actions 页面，选择 [Refresh Latest Release](../../actions/workflows/refresh-latest.yml) workflow
+2. 点 "Run workflow"
+3. 默认会把最近一个 `vYYYYMMDD_HHMMSS` 时间戳 release 发布到 `latest`
+4. 如需指定其他版本，在 `source_tag` 字段填入具体 tag
+
+#### 方式 3：Repository Dispatch（API 触发）
+
+```bash
+curl -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  https://api.github.com/repos/OERV-RVCI/RAVA_ROOTFS/dispatches \
+  -d '{"event_type": "refresh-latest"}'
+```
+
+#### 发布完成后
+
+下面的链接才会生效：
+
+- <https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest>
+- <https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/latest/download/...>
+
+### 历史 release
+
 | 发行版 | 镜像文件 | 压缩包 |
 |--------|----------|--------|
 | openEuler-24.03-LTS-SP3 | `openEuler-24.03-LTS-SP3-rootfs.img.zst` | `openEuler-24.03-LTS-SP3-rootfs.tar.gz` |

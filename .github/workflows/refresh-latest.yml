@@ -1,0 +1,118 @@
+name: Refresh Latest Release
+
+# 发布 latest tag（不会重新构建 rootfs）
+# 三种触发方式：
+#   1. 推送 latest tag        : git push origin <某个 commit SHA>:refs/tags/latest
+#                                或者 git tag -f latest && git push origin latest --force
+#   2. 手动 Run workflow      : 在 Actions 页面点 "Run workflow"，可填入 source_tag
+#   3. Repository Dispatch     : POST /repos/{owner}/{repo}/dispatches event_type=refresh-latest
+#
+# 三种方式行为一致：把已存在的最近一个 vYYYYMMDD_HHMMSS 时间戳 release（除非指定了 source_tag）
+# 重新发布为 latest tag，并显式 make_latest 覆盖 /releases/latest 指向。
+
+on:
+  push:
+    tags:
+      - latest
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: '源 release tag（留空则自动取最近一个 vYYYYMMDD_HHMMSS）'
+        required: false
+        type: string
+  repository_dispatch:
+    types: [refresh-latest]
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine source tag
+        id: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.source_tag }}" ]; then
+            source_tag="${{ inputs.source_tag }}"
+            echo "Using user-specified source tag: ${source_tag}"
+          else
+            # 取最近一个匹配 vYYYYMMDD_HHMMSS 的 release
+            source_tag=$(gh release list --limit 100 \
+              --json tagName,publishedAt \
+              -q '.[] | select(.tagName|test("^v[0-9]{8}_[0-9]{6}$")) | .tagName' \
+              | head -1)
+
+            if [ -z "$source_tag" ]; then
+              echo "::error::未找到任何 vYYYYMMDD_HHMMSS 形式的时间戳 release，请先运行主构建流水线"
+              exit 1
+            fi
+            echo "Auto-selected most recent timestamped release: ${source_tag}"
+          fi
+
+          echo "source_tag=${source_tag}" >> $GITHUB_OUTPUT
+
+      - name: Verify source release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${{ steps.source.outputs.source_tag }}" > /dev/null 2>&1; then
+            echo "::error::源 release '${{ steps.source.outputs.source_tag }}' 不存在"
+            exit 1
+          fi
+          echo "Source release verified: ${{ steps.source.outputs.source_tag }}"
+
+      - name: Download artifacts from source release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rm -rf artifacts
+          mkdir -p artifacts
+          gh release download "${{ steps.source.outputs.source_tag }}" --dir artifacts
+          echo "Downloaded files:"
+          find artifacts -type f -printf '%p (%s bytes)\n' | sort
+
+      - name: Update latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          files: |
+            artifacts/**/*
+          overwrite: true
+          prerelease: false
+          make_latest: true
+          body: |
+            最新自动构建的 RISC-V64 rootfs 镜像
+
+            来源 release: `${{ steps.source.outputs.source_tag }}`
+
+            此 release 由 refresh-latest workflow 重新发布。
+            稳定下载入口：
+
+            ```
+            https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest
+            ```
+
+            历史版本请查看其他带时间戳的 release。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        env:
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          case "${TRIGGER}" in
+            push)              trigger_desc="push 'latest' tag" ;;
+            workflow_dispatch) trigger_desc="手动 Run workflow" ;;
+            repository_dispatch) trigger_desc="Repository Dispatch" ;;
+            *)                 trigger_desc="${TRIGGER}" ;;
+          esac
+
+          echo "### latest tag 已更新" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 来源 release: \`${{ steps.source.outputs.source_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 触发方式: ${trigger_desc}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "稳定下载入口: https://github.com/OERV-RVCI/RAVA_ROOTFS/releases/tag/latest" >> $GITHUB_STEP_SUMMARY
