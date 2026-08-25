@@ -58,8 +58,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! gh release view "${{ steps.source.outputs.source_tag }}" > /dev/null 2>&1; then
-            echo "::error::源 release '${{ steps.source.outputs.source_tag }}' 不存在"
+          set +e
+          gh release view "${{ steps.source.outputs.source_tag }}" 2>&1
+          rc=$?
+          set -e
+          if [ $rc -ne 0 ]; then
+            echo "::error::源 release '${{ steps.source.outputs.source_tag }}' 不存在（gh exit=${rc}）"
+            echo "::error::当前 repo 可见的 v* release 列表："
+            gh release list --limit 20 --json tagName,isDraft,isPrerelease,publishedAt \
+              -q '.[] | select(.tagName|test("^v[0-9]{8}_[0-9]{6}$")) | "\(.tagName)\tdraft=\(.isDraft) prerelease=\(.isPrerelease) at=\(.publishedAt)"'
             exit 1
           fi
           echo "Source release verified: ${{ steps.source.outputs.source_tag }}"
