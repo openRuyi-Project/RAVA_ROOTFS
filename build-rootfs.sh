@@ -193,6 +193,11 @@ EOF
 
     echo "${HOSTNAME}" > "${ROOTFS_DIR}/etc/hostname"
 
+    # DNS 配置（写入所有发行版的 rootfs，img.zst 和 tar.gz 均包含）
+    cat > "${ROOTFS_DIR}/etc/resolv.conf" << 'EOF'
+nameserver 8.8.8.8
+EOF
+
     # SELinux 启用时需要 autorelabel
     if [[ "${SELINUX_ENABLED:-false}" == "true" ]]; then
         touch "${ROOTFS_DIR}/.autorelabel"
@@ -210,9 +215,6 @@ echo "root:${ROOT_PASSWORD}" | chroot "${ROOTFS_DIR}" chpasswd
     if [[ "${DISTRO}" == openruyi* ]]; then
         chroot "${ROOTFS_DIR}" useradd -r -s /sbin/nologin systemd-resolve 2>/dev/null || true
         chroot "${ROOTFS_DIR}" systemctl enable NetworkManager.service 2>/dev/null || true
-        cat > "${ROOTFS_DIR}/etc/resolv.conf" << 'EOF'
-nameserver 223.5.5.5
-EOF
     fi
 
     # chroot "${ROOTFS_DIR}" systemctl enable sshd.service 2>/dev/null || true
@@ -294,10 +296,6 @@ export http_proxy=${PROXY_HTTP}
 export all_proxy=${PROXY_SOCKS}
 EOF
     chmod +x "${ROOTFS_DIR}/etc/profile.d/proxy.sh"
-
-    cat > "${ROOTFS_DIR}/etc/resolv.conf" << EOF
-nameserver 223.5.5.5
-EOF
 
     tar -czf "${ROOTFS_TARBALL}" -C "${ROOTFS_DIR}" .
 
